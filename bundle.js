@@ -15,6 +15,68 @@ var apiKey = "AIzaSyDBYVgCATp-oO7PCaJLvg6wZyl3gmTDwz4";
 setupInputEditor();
 setupOutputEditor();
 
+
+//////////////////////////////////////////////
+///////////////////TEST AREA//////////////////
+
+//Calls updateUrlCounter function when inputEditor changes
+inputEditor.on("change", updateUrlCounter);
+
+var totalUrl = 0;
+var youtubeCounter = 0;
+var vimeoCounter = 0;
+
+//Get elements
+var youtubeCounterElement = document.querySelector("#youtubeCounter");
+var vimeoCounterElement = document.querySelector("#vimeoCounter");
+var totalCounterElement = document.querySelector("#totalCounter");
+
+//Assigns default value to the counter
+youtubeCounterElement.innerHTML = `Youtube: ${youtubeCounter}`;
+vimeoCounterElement.innerHTML = `Vimeo: ${vimeoCounter}`;
+totalCounterElement.innerHTML = `Total: ${totalUrl}`;
+
+//This function outputs values to counter div element
+function updateUrlCounter() {
+
+  //Reset values
+  totalUrl = 0;
+  youtubeCounter = 0;
+  vimeoCounter = 0;
+
+  //Get all lines from the input editor
+  var urls = inputEditor.session.doc.getAllLines();
+
+  for (var i = 0; i < urls.length; i++) {
+
+    //parse each line, if returned 'undefined': not a correct url
+    var parsedUrl = urlParser.parse(urls[i]);
+    if (parsedUrl) {
+      if (parsedUrl.provider == 'youtube') {
+        youtubeCounter++;
+      }
+      if (parsedUrl.provider == 'vimeo') {
+        vimeoCounter++;
+      }
+    } //end check returned value
+  } //end for loop
+
+  totalUrl = youtubeCounter + vimeoCounter;
+  //Assigns values to counters
+  youtubeCounterElement.innerHTML = `Youtube: ${youtubeCounter}`;
+  vimeoCounterElement.innerHTML = `Vimeo: ${vimeoCounter}`;
+  totalCounterElement.innerHTML = `Total: ${totalUrl}`;
+
+} //End function
+
+
+///////////////////END TEST AREA//////////////
+//////////////////////////////////////////////
+
+
+
+
+
 //Pre-connect to Youtube api to speed up the generating process
 setTimeout(function() {
   loadYoutubeClient();
@@ -214,13 +276,12 @@ function getUrls() {
       if (parsedUrl.provider == 'vimeo') {
 
         //Use urlParser.prase(url[i]) and then create link using below
-          var createdUrl= urlParser.create(
-        {
-            videoInfo: {
+        var createdUrl = urlParser.create({
+          videoInfo: {
             provider: parsedUrl.provider,
-            id:parsedUrl.id,
-            mediaType:parsedUrl.mediaType,
-            }
+            id: parsedUrl.id,
+            mediaType: parsedUrl.mediaType,
+          }
         })
         vimeoUrlArr[urlCounter] = createdUrl;
         urlCounter++;
