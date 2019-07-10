@@ -6,7 +6,7 @@ body {
   width: 100%;
   height: 100%;
   overflow-y: hidden;
-  font-family: 'Special Elite', cursive;
+  font-family: 'Roboto Slab', serif;
 }
 
 /* Remove  scroll bar from editors */
@@ -77,12 +77,13 @@ textarea {
   }
 
   /* Button style */
-  #buttons{
+  #control{
     text-align: center;
-    margin-top: 180px;
+    margin-left: 5px;
   }
 
   #copy, #run{
+    font-family : inherit;
     width:95%;
     height: 14%;
     border-radius: 5px;
@@ -107,12 +108,34 @@ textarea {
     background-color: #00ABF6;
   }
 
+
+/* Counter style */
+#urlCounterContainer{
+  font-size: 0.85em;
+  border: 1px solid #FFF;
+  margin: 5px;
+  margin-top: 50px;
+  margin-bottom: 50px;
+  background: rgba(34, 34, 34, 0.1) /* Blue background with 30% opacity */
+
+}
+#urlCounterContainer p{
+  margin: 0;
+  padding: 5px;
+}
+
+/* End counter style */
+
+
  }/*@media*/
  @media only screen and (min-width: 900px) {
 
    #copy, #run{
      font-size: 1.5em;
      color: #FFF;
+   }
+   #urlCounterContainer{
+     font-size: 1.1em;
    }
 
   }/*@media*/
