@@ -1,89 +1,78 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-//Import dependency
-var urlParser = require("js-video-url-parser");
+// Import dependency
+var urlParser = require('js-video-url-parser');
 
-
-//Add click events to buttons
+// Add click events to buttons
 document.querySelector('#run').addEventListener('click', run);
 document.querySelector('#copy').addEventListener('click', copyOutput);
 
+// This variable is for requesting to the API
+var apiKey = 'AIzaSyDBYVgCATp-oO7PCaJLvg6wZyl3gmTDwz4';
 
-//This variable is for requesting to the API
-var apiKey = "AIzaSyDBYVgCATp-oO7PCaJLvg6wZyl3gmTDwz4";
-
-//initialise the input output editors
+// initialise the input output editors
 setupInputEditor();
 setupOutputEditor();
 
 
-//////////////////////////////////////////////
-///////////////////TEST AREA//////////////////
+//////////////////////////////////////////////////////////
+///////////////////Counter section////////////////////////
+//////////////////////////////////////////////////////////
 
 //Calls updateUrlCounter function when inputEditor changes
-inputEditor.on("change", updateUrlCounter);
+inputEditor.on('change', updateUrlCounter);
+
 
 var totalUrl = 0;
 var youtubeCounter = 0;
 var vimeoCounter = 0;
 
-//Get elements
-var youtubeCounterElement = document.querySelector("#youtubeCounter");
-var vimeoCounterElement = document.querySelector("#vimeoCounter");
-var totalCounterElement = document.querySelector("#totalCounter");
+//  Get elements
+var youtubeCounterElement = document.querySelector('#youtubeCounter');
+var vimeoCounterElement = document.querySelector('#vimeoCounter');
 
-//Assigns default value to the counter
-youtubeCounterElement.innerHTML = `Youtube: ${youtubeCounter}`;
-vimeoCounterElement.innerHTML = `Vimeo: ${vimeoCounter}`;
-totalCounterElement.innerHTML = `Total: ${totalUrl}`;
+//  Assigns default value to the counter
+youtubeCounterElement.innerHTML = ` ${youtubeCounter}`;
+vimeoCounterElement.innerHTML = ` ${vimeoCounter}`;
 
-//This function outputs values to counter div element
-function updateUrlCounter() {
+// This function outputs values to counter div element
+function updateUrlCounter () {
 
-  //Reset values
-  totalUrl = 0;
+  // Reset values
   youtubeCounter = 0;
   vimeoCounter = 0;
 
-  //Get all lines from the input editor
+  // Get all lines from the input editor
   var urls = inputEditor.session.doc.getAllLines();
 
   for (var i = 0; i < urls.length; i++) {
-
-    //parse each line, if returned 'undefined': not a correct url
+    // parse each line, if returned 'undefined': not a correct url
     var parsedUrl = urlParser.parse(urls[i]);
     if (parsedUrl) {
-      if (parsedUrl.provider == 'youtube') {
+      if (parsedUrl.provider === 'youtube') {
         youtubeCounter++;
       }
-      if (parsedUrl.provider == 'vimeo') {
+      if (parsedUrl.provider === 'vimeo') {
         vimeoCounter++;
       }
-    } //end check returned value
-  } //end for loop
+    } // end check returned value
+  } // end for loop
 
-  totalUrl = youtubeCounter + vimeoCounter;
-  //Assigns values to counters
-  youtubeCounterElement.innerHTML = `Youtube: ${youtubeCounter}`;
-  vimeoCounterElement.innerHTML = `Vimeo: ${vimeoCounter}`;
-  totalCounterElement.innerHTML = `Total: ${totalUrl}`;
+  // Assigns values to counters
+  youtubeCounterElement.innerHTML = ` ${youtubeCounter}`;
+  vimeoCounterElement.innerHTML = ` ${vimeoCounter}`;
+}// End function
 
-} //End function
+//////////////////////////////////////////////////////////
+/////////////////End Counter section//////////////////////
+//////////////////////////////////////////////////////////
 
-
-///////////////////END TEST AREA//////////////
-//////////////////////////////////////////////
-
-
-
-
-
-//Pre-connect to Youtube api to speed up the generating process
-setTimeout(function() {
+//  Pre-connect to Youtube api to speed up the generating process
+setTimeout(function () {
   loadYoutubeClient();
 }, 500);
 
 //This function is called by the Generate button
-async function run() {
+async function run () {
   //Only run if the input is more than 10 chars
   if (inputEditor.session.getValue().length > 10) {
     getUrls();
@@ -102,12 +91,12 @@ function printOutput() {
 function printTitle() {
 
   //Clear output editor
-  outputEditor.setValue("");
+  outputEditor.setValue('');
 
   var videoNumber = 0;
 
   //Add <ol>
-  outputEditor.session.insert(0, "<ol>");
+  outputEditor.session.insert(0, '<ol>');
   addEmptyLine();
 
   //Get the biggest array
@@ -138,13 +127,13 @@ function printTitle() {
   }
 
   //Add </ol>
-  outputEditor.session.insert(0, "</ol>");
+  outputEditor.session.insert(0, '</ol>');
   addEmptyLine();
 } //end function
 
 
 function printIframe() {
-  outputEditor.session.insert(0, "<p>");
+  outputEditor.session.insert(0, '<p>');
   //Get the biggest array
   var arrSize = getBiggestArr(vimeoUrlArr, youtubeVideoIdArr);
   var vimeo = 0;
@@ -154,7 +143,7 @@ function printIframe() {
     //Print vimeo titles
     if (vimeoUrlArr[r]) {
       var videoId = vimeoResponse[vimeo].video_id;
-      var iframe = `  <iframe width="120" height="120" src="https://player.vimeo.com/video/${videoId}?color=ffffff&amp;title=0&amp;byline=0&amp;portrait=0" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen=""></iframe>`;
+      var iframe = `  <iframe width='120' height='120' src='https://player.vimeo.com/video/${videoId}?color=ffffff&amp;title=0&amp;byline=0&amp;portrait=0' frameborder='0' webkitallowfullscreen='' mozallowfullscreen='' allowfullscreen=''></iframe>`;
       outputEditor.session.insert(r, iframe);
       addEmptyLine();
       vimeo++;
@@ -168,7 +157,7 @@ function printIframe() {
       youtube++;
     }
   }
-  outputEditor.session.insert(0, "</p>");
+  outputEditor.session.insert(0, '</p>');
 }
 
 
@@ -188,7 +177,7 @@ function getBiggestArr(arr1, arr2) {
 //Variable for storing just the video id not the entire youtube url
 //Youtube API only accept video ids not the full url
 var youtubeVideoIdArr = [];
-var youtubeVideoID = "";
+var youtubeVideoID = '';
 
 //Vimeo accepts OEMBED so full url is accepted and no api key is needed
 var vimeoUrlArr = [];
@@ -196,10 +185,10 @@ var vimeoUrlArr = [];
 //This function loads the API using the api key
 function loadYoutubeClient() {
   gapi.client.setApiKey(apiKey);
-  return gapi.client.load("https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest")
+  return gapi.client.load('https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest')
     .then(function() {},
       function(err) {
-        console.error("Error loading GAPI client for API", err);
+        console.error('Error loading GAPI client for API', err);
       });
 }
 
@@ -233,18 +222,18 @@ async function vimeoRequest() {
 // Sends request to Youtube
 function youtubeRequest() {
   return gapi.client.youtube.videos.list({
-      "part": "snippet,contentDetails",
-      "id": youtubeVideoID
+      'part': 'snippet,contentDetails',
+      'id': youtubeVideoID
     })
     .then(function(response) {
         youtubeResponse = response;
       },
       function(err) {
-        console.error("Execute error", err);
+        console.error('Execute error', err);
       });
 } //end function
 
-gapi.load("client");
+gapi.load('client');
 
 
 // This function gets urls from the input editor
@@ -252,7 +241,7 @@ function getUrls() {
   //Reset arrays
   vimeoUrlArr = [];
   youtubeVideoIdArr = [];
-  youtubeVideoID = "";
+  youtubeVideoID = '';
 
   //Get all lines from the input editor
   var urls = inputEditor.session.doc.getAllLines();
@@ -292,19 +281,21 @@ function getUrls() {
 
 
 //////////////////////////////////////////////////////////
+///////////////////Input & Output setup///////////////////
 //////////////////////////////////////////////////////////
 
+
 function setupInputEditor() {
-  window.inputEditor = ace.edit("input");
-  inputEditor.setTheme("ace/theme/tomorrow_night_eighties");
-  inputEditor.getSession().setMode("ace/mode/html");
-  inputEditor.on("input", updateInput);
+  window.inputEditor = ace.edit('input');
+  inputEditor.setTheme('ace/theme/tomorrow_night_eighties');
+  inputEditor.getSession().setMode('ace/mode/html');
+  inputEditor.on('input', updateInput);
   setTimeout(updateInput, 100);
 
   inputEditor.focus();
 
   inputEditor.setOptions({
-    fontSize: "12pt",
+    fontSize: '10.5pt',
     showLineNumbers: true,
     showGutter: true,
     vScrollBarAlwaysVisible: false,
@@ -323,24 +314,22 @@ function updateInput() {
     inputEditor.renderer.scroller.removeChild(inputEditor.renderer.emptyMessageNode);
     inputEditor.renderer.emptyMessageNode = null;
   } else if (shouldShow && !node) {
-    node = inputEditor.renderer.emptyMessageNode = document.createElement("div");
-    node.textContent = "One Youtube/Vimeo link on one line."
-    node.className = "emptyMessage"
+    node = inputEditor.renderer.emptyMessageNode = document.createElement('div');
+    node.textContent = 'Paste the whole HTML of an item and make sure only one link on one line'
+    node.className = 'emptyMessage'
     inputEditor.renderer.scroller.appendChild(node);
   }
 }
 
-//////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////
 function setupOutputEditor() {
-  window.outputEditor = ace.edit("output");
-  outputEditor.setTheme("ace/theme/tomorrow_night_eighties");
-  outputEditor.getSession().setMode("ace/mode/html");
-  outputEditor.on("change", updateOutput);
+  window.outputEditor = ace.edit('output');
+  outputEditor.setTheme('ace/theme/tomorrow_night_eighties');
+  outputEditor.getSession().setMode('ace/mode/html');
+  outputEditor.on('change', updateOutput);
   setTimeout(updateOutput, 100);
 
   outputEditor.setOptions({
-    fontSize: "10.5pt",
+    fontSize: '10.5pt',
     showLineNumbers: true,
     showGutter: true,
     vScrollBarAlwaysVisible: false,
@@ -358,16 +347,21 @@ function updateOutput() {
     outputEditor.renderer.scroller.removeChild(outputEditor.renderer.emptyMessageNode);
     outputEditor.renderer.emptyMessageNode = null;
   } else if (shouldShow && !node) {
-    node = outputEditor.renderer.emptyMessageNode = document.createElement("div");
-    node.textContent = "Output"
-    node.className = "outputMessage"
+    node = outputEditor.renderer.emptyMessageNode = document.createElement('div');
+    node.textContent = 'Output';
+    node.className = 'outputMessage';
     outputEditor.renderer.scroller.appendChild(node);
   }
 }
 
+
 //////////////////////////////////////////////////////////
+////////////////CEnd Input & Output setup/////////////////
 //////////////////////////////////////////////////////////
+
+
 //////////////////////////////////////////////////////////
+/////////////////////////Copy function////////////////////
 //////////////////////////////////////////////////////////
 
 
@@ -379,12 +373,12 @@ function copyOutput() {
     document.execCommand('copy');
 
     // Reset textarea
-    copyTextarea.value = "";
+    copyTextarea.value = '';
 
     //Add flashStart class to overlay div to create a flash effect when copyOutput is called
-    document.querySelector(".copyAlert").classList.add("flash");
+    document.querySelector('.copyAlert').classList.add('flash');
     setTimeout(function() {
-      document.querySelector(".copyAlert").classList.remove("flash");
+      document.querySelector('.copyAlert').classList.remove('flash');
     }, 500);
   }
 }
@@ -393,23 +387,23 @@ function copyOutput() {
 copyAlertOverlay();
 
 function copyAlertOverlay() {
-  var node = document.createElement("div");
-  node.className = "copyAlert"
-  document.querySelector("#output .ace_scroller .ace_content").appendChild(node);
+  var node = document.createElement('div');
+  node.className = 'copyAlert';
+  document.querySelector('#output .ace_scroller .ace_content').appendChild(node);
 }
 
 
 //////////////////////////////////////////////////////////
+///////////////////////End Copy function//////////////////
 //////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////
+
 
 //This function adds an empty line to the output editor
 function addEmptyLine() {
   outputEditor.session.insert({
     row: outputEditor.session.getLength(),
     column: 0
-  }, "\n");
+  }, '\n');
 }
 
 //This function converts seconds to HH:MM::SS format
@@ -420,19 +414,19 @@ function convertVimeoDuration(Seconds) {
 
   // round seconds
   seconds = Math.round(seconds * 100) / 100;
-  var result = "";
+  var result = '';
 
   if (hours > 0) {
     result += (hours < 10 ? +hours : hours);
-    result += ":";
+    result += ':';
   }
   if (minutes > 0) {
-    result += (minutes < 10 ? "0" + minutes : minutes);
+    result += (minutes < 10 ? '0' + minutes : minutes);
   } else if (minutes < 1) {
-    result += "0";
+    result += '0';
   }
-  result += ":";
-  result += (seconds < 10 ? "0" + seconds : seconds);
+  result += ':';
+  result += (seconds < 10 ? '0' + seconds : seconds);
   return result;
 }
 
