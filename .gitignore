@@ -4,8 +4,6 @@ node_modules/
 
 # Compiled source #
 ###################
-package-lock.json
-package.json
 # *.com
 # *.class
 # *.dll
