@@ -54,6 +54,7 @@ textarea {
   }
 
   #container {
+    margin-left: 5px;
     margin-top: 3em;
     width: 99%;
     height: 100vh;
@@ -73,69 +74,88 @@ textarea {
   }
 
   .outputMessage {
-    font-size: 2.5em;
+    font-size: 2em;
   }
 
   /* Button style */
-  #control{
+  #control {
     text-align: center;
     margin-left: 5px;
+    position: relative;
+    min-height: 100vh;
   }
 
-  #copy, #run{
-    font-family : inherit;
-    width:95%;
-    height: 14%;
+  #copy, #run {
+    width: 85%;
+    height: 10vh;
     border-radius: 5px;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     font-size: 1.1em;
     color: #FFF;
   }
 
-  #copy{
+  #copy {
     background-color: #FF5073;
   }
 
-  #copy:hover{
+  #copy:hover {
     background-color: #FF355E;
   }
 
-  #run{
+  #run {
     background-color: #42BCF2;
   }
 
-  #run:hover{
+  #run:hover {
     background-color: #00ABF6;
   }
 
+  /* Counter style */
+  #urlCounterContainer {
+    font-size: 1.3em;
+    margin: 5px;
+    margin-top: 50px;
+    margin-bottom: 100px;
+    background: rgba(34, 34, 34, 0.1)
+  }
 
-/* Counter style */
-#urlCounterContainer{
-  font-size: 0.85em;
-  border: 1px solid #FFF;
-  margin: 5px;
-  margin-top: 50px;
-  margin-bottom: 50px;
-  background: rgba(34, 34, 34, 0.1) /* Blue background with 30% opacity */
+  #urlCounterContainer p {
+    margin: 0;
+    padding: 5px;
+  }
 
+  /* End counter style */
+  /* Personal Info style */
+  #devDetails {
+    font-size: 0.8em;
+    position: absolute;
+    bottom: 0;
+    margin-bottom: 100px;
+  }
+
+  #name {
+    color: #ff5c00;
+    font-size: 1.2em;
+    margin-top: -12px;
+    margin-bottom: -14px;
+  }
+
+  #email a {
+    color: #ff5c00;
+    font-size: 1.2em;
+  }
 }
-#urlCounterContainer p{
-  margin: 0;
-  padding: 5px;
+
+/*@media*/
+@media only screen and (min-width: 900px) {
+  #copy, #run {
+    font-size: 2em;
+    color: #FFF;
+  }
+
+  #urlCounterContainer {
+    font-size: 1.5em;
+  }
 }
 
-/* End counter style */
-
-
- }/*@media*/
- @media only screen and (min-width: 900px) {
-
-   #copy, #run{
-     font-size: 1.5em;
-     color: #FFF;
-   }
-   #urlCounterContainer{
-     font-size: 1.1em;
-   }
-
-  }/*@media*/
+/*@media*/
