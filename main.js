@@ -19,6 +19,7 @@ setupOutputEditor();
 //Calls updateUrlCounter function when inputEditor changes
 inputEditor.on('change', updateUrlCounter);
 
+
 var totalUrl = 0;
 var youtubeCounter = 0;
 var vimeoCounter = 0;

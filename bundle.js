@@ -13,12 +13,14 @@ var apiKey = 'AIzaSyDBYVgCATp-oO7PCaJLvg6wZyl3gmTDwz4';
 setupInputEditor();
 setupOutputEditor();
 
+
 //////////////////////////////////////////////////////////
 ///////////////////Counter section////////////////////////
 //////////////////////////////////////////////////////////
 
 //Calls updateUrlCounter function when inputEditor changes
 inputEditor.on('change', updateUrlCounter);
+
 
 var totalUrl = 0;
 var youtubeCounter = 0;
