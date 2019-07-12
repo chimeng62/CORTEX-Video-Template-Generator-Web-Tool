@@ -13,14 +13,13 @@ var apiKey = 'AIzaSyDBYVgCATp-oO7PCaJLvg6wZyl3gmTDwz4';
 setupInputEditor();
 setupOutputEditor();
 
-
+// TODO: Find video items on vUWS for demonstration
 //////////////////////////////////////////////////////////
 ///////////////////Counter section////////////////////////
 //////////////////////////////////////////////////////////
 
 //Calls updateUrlCounter function when inputEditor changes
 inputEditor.on('change', updateUrlCounter);
-
 
 var totalUrl = 0;
 var youtubeCounter = 0;
@@ -34,8 +33,14 @@ var vimeoCounterElement = document.querySelector('#vimeoCounter');
 youtubeCounterElement.innerHTML = ` ${youtubeCounter}`;
 vimeoCounterElement.innerHTML = ` ${vimeoCounter}`;
 
+var youtubeFlashTime = 0;
+var vimeoFlashTime = 0;
+
+//Variables for checking
+var isValidUrl = false;
+var isAtleastOneMatch = false;
 // This function outputs values to counter div element
-function updateUrlCounter () {
+function updateUrlCounter() {
 
   // Reset values
   youtubeCounter = 0;
@@ -44,37 +49,63 @@ function updateUrlCounter () {
   // Get all lines from the input editor
   var urls = inputEditor.session.doc.getAllLines();
 
+
+  if (inputEditor.session.getValue().length < 1) {
+    isAtleastOneMatch = false;
+  }
+
   for (var i = 0; i < urls.length; i++) {
     // parse each line, if returned 'undefined': not a correct url
     var parsedUrl = urlParser.parse(urls[i]);
     if (parsedUrl) {
       if (parsedUrl.provider === 'youtube') {
         youtubeCounter++;
-      }
-      if (parsedUrl.provider === 'vimeo') {
+        isValidUrl = true;
+        isAtleastOneMatch = true;
+      } else if (parsedUrl.provider === 'vimeo') {
         vimeoCounter++;
+        isValidUrl = true;
+        isAtleastOneMatch = true;
       }
+    } else if (isAtleastOneMatch == false) {
+      isValidUrl = false;
     } // end check returned value
   } // end for loop
 
-  // Assigns values to counters
-  youtubeCounterElement.innerHTML = ` ${youtubeCounter}`;
   vimeoCounterElement.innerHTML = ` ${vimeoCounter}`;
-}// End function
+  youtubeCounterElement.innerHTML = ` ${youtubeCounter}`;
+
+  // Add flash effect to counters when value changes
+  if (youtubeCounter > youtubeFlashTime || youtubeCounter < youtubeFlashTime) {
+    youtubeFlashTime = youtubeCounter;
+    youtubeCounterElement.classList.add('youtubeCounterFlash');
+    setTimeout(function() {
+      youtubeCounterElement.classList.remove('youtubeCounterFlash');
+    }, 500);
+  }
+  if (vimeoCounter > vimeoFlashTime || vimeoCounter < vimeoFlashTime) {
+    vimeoFlashTime = vimeoCounter;
+    vimeoCounterElement.classList.add('vimeoCounterFlash');
+    setTimeout(function() {
+      vimeoCounterElement.classList.remove('vimeoCounterFlash');
+    }, 500);
+  }
+
+} // End function
 
 //////////////////////////////////////////////////////////
 /////////////////End Counter section//////////////////////
 //////////////////////////////////////////////////////////
 
 //  Pre-connect to Youtube api to speed up the generating process
-setTimeout(function () {
+setTimeout(function() {
   loadYoutubeClient();
 }, 500);
 
 //This function is called by the Generate button
-async function run () {
+async function run() {
   //Only run if the input is more than 10 chars
-  if (inputEditor.session.getValue().length > 10) {
+  if (isValidUrl == true) {
     getUrls();
     await youtubeRequest();
     await vimeoRequest();
@@ -151,7 +182,7 @@ function printIframe() {
 
     //Print youtube titles
     if (youtubeVideoIdArr[r]) {
-      var iframe = `  <iframe width='120' height='120' src='https://www.youtube.com/embed/${youtubeVideoIdArr[r]}?rel=0;showinfo=0' allow='autoplay; encrypted-media' frameborder='0' allowfullscreen=''></iframe>`;
+      var iframe = `  <iframe width='120' height='120' src='https://www.youtube.com/embed/${youtubeVideoIdArr[r]}?rel=0;showinfo=0' frameborder='0' allowfullscreen=''></iframe>`;
       outputEditor.session.insert(0, iframe);
       addEmptyLine();
       youtube++;
@@ -247,7 +278,6 @@ function getUrls() {
   var urls = inputEditor.session.doc.getAllLines();
   var urlCounter = 0;
 
-
   for (var i = 0; i < urls.length; i++) {
 
     //parse each line, if returned 'undefined': not a correct url
@@ -255,7 +285,6 @@ function getUrls() {
     if (parsedUrl) {
       if (parsedUrl.provider == 'youtube') {
 
-        //Replace both youtube_parser...
         youtubeVideoID = youtubeVideoID + ',' + parsedUrl.id;
         youtubeVideoIdArr[urlCounter] = parsedUrl.id;
         urlCounter++;
