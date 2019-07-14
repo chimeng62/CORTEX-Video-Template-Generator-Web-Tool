@@ -146,7 +146,8 @@ textarea {
   }
 
   .outputMessage {
-    font-size: 2em;
+    font-size: 1.4em;
+    opacity: 0.7;
   }
 
   /* Button style */
@@ -212,7 +213,7 @@ textarea {
 
   #credit {
     margin-top: -12px;
-    color: #A31D35;
+    color: #ff5c00;
     font-size: 1.1em;
   }
 

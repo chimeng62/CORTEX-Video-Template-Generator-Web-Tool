@@ -1,6 +1,10 @@
 // Import dependency
 var urlParser = require('js-video-url-parser');
 
+// initialise the input output editors
+setupInputEditor();
+setupOutputEditor();
+
 // Add click events to buttons
 document.querySelector('#run').addEventListener('click', run);
 document.querySelector('#copy').addEventListener('click', copyOutput);
@@ -8,11 +12,294 @@ document.querySelector('#copy').addEventListener('click', copyOutput);
 // This variable is for requesting to the API
 var apiKey = 'AIzaSyDBYVgCATp-oO7PCaJLvg6wZyl3gmTDwz4';
 
-// initialise the input output editors
-setupInputEditor();
-setupOutputEditor();
+//Error messages
+var videoNotFoundErrMsg = 'Some of the Vimeo links are broken or inaccessible through the API, Check console for more.';
 
-// TODO: Find video items on vUWS for demonstration
+//Check vimeo links
+var isVideoFound = true;
+
+//  Pre-connect to Youtube api to speed up the generating process
+setTimeout(function() {
+  loadYoutubeClient();
+}, 500);
+
+//This function is called by the Generate button
+async function run() {
+  //Only run if the input is more than 10 chars
+  if (isValidUrl == true) {
+    getUrls();
+
+    //Only send requests to Youtube if urls exist
+    if (youtubeVideoID) {
+      await youtubeRequest();
+    }
+
+    await vimeoRequest();
+
+    if (isVideoFound == true) {
+      hideErrorMsg();
+      printOutput();
+    } else {
+      outputEditor.setValue('');
+      showErrorMsg(videoNotFoundErrMsg);
+    }
+  }
+}
+
+function printOutput() {
+  printTitle();
+  printIframe();
+}
+
+// TODO: Find Vimeo video items on vUWS for demonstration
+
+//////////////////////////////////////////////////////////
+//////////////////////////TEST AREA///////////////////////
+//////////////////////////////////////////////////////////
+
+//initiate error message container
+var node = outputEditor.renderer.emptyMessageNode;
+node = outputEditor.renderer.emptyMessageNode = document.createElement('div');
+node.className = 'outputMessage';
+outputEditor.renderer.scroller.appendChild(node);
+
+function showErrorMsg(errMsg) {
+  document.querySelector('.outputMessage').innerHTML = errMsg;
+}
+
+function hideErrorMsg() {
+  var node = outputEditor.renderer.emptyMessageNode;
+  if (node) {
+    document.querySelector('.outputMessage').innerHTML = '';
+  }
+}
+
+//////////////////////////////////////////////////////////
+//////////////////////END TEST AREA///////////////////////
+//////////////////////////////////////////////////////////
+
+
+//Variable for storing just the video id not the entire youtube url
+//Youtube API only accept video ids not the full url
+var youtubeVideoIdArr = [];
+var youtubeVideoID = '';
+
+//Vimeo accepts OEMBED so full url is accepted and no api key is needed
+var vimeoUrlArr = [];
+
+//////////////////////////////////////////////////////////
+//////////////////Youtube request section/////////////////
+//////////////////////////////////////////////////////////
+
+//This function loads the API using the api key
+function loadYoutubeClient() {
+  gapi.client.setApiKey(apiKey);
+  return gapi.client.load('https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest')
+    .then(function() {},
+      function(err) {
+        console.error('Error loading GAPI client for API', err);
+      });
+}
+
+var youtubeResponse = [];
+// TODO: switch youtube request function to individual request: check jsfiddle playground
+// Sends request to Youtube
+function youtubeRequest() {
+  return gapi.client.youtube.videos.list({
+      'part': 'snippet,contentDetails',
+      'id': youtubeVideoID
+    })
+    .then(function(response) {
+        youtubeResponse = response;
+      },
+      function(err) {
+        console.error('Execute error', err);
+      });
+} //end function
+
+gapi.load('client');
+
+//////////////////////////////////////////////////////////
+/////////////////End Youtube request section//////////////
+//////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////
+///////////////////Vimeo request section//////////////////
+//////////////////////////////////////////////////////////
+
+
+
+//This function takes in a full Vimeo url
+function vimeoFetch(url) {
+  return fetch('https://vimeo.com/api/oembed.json?url=' + url) // return this promise
+    .then((resp) => resp.json())
+    .catch((err) => isVideoFound = false);
+}
+
+var vimeoResponse = [];
+
+//Send request to Vimeo
+async function vimeoRequest() {
+  var counter = 0;
+
+  for (var o = 0; o < vimeoUrlArr.length; o++) {
+    if (vimeoUrlArr[o]) {
+
+      await vimeoFetch(vimeoUrlArr[o])
+        .then(function(data) {
+          vimeoResponse[counter] = data;
+          counter++;
+        })
+        .catch(function(error) {
+          isVideoFound = false;
+        });
+    }
+  } //end for loop
+} //end function
+
+//////////////////////////////////////////////////////////
+///////////////////End Vimeo request section//////////////
+//////////////////////////////////////////////////////////
+
+// This function gets urls from the input editor
+function getUrls() {
+  //Reset arrays
+  vimeoUrlArr = [];
+  youtubeVideoIdArr = [];
+  youtubeVideoID = '';
+
+  //Reset video checking
+  isVideoFound = true;
+  //Get all lines from the input editor
+  var urls = inputEditor.session.doc.getAllLines();
+  var urlCounter = 0;
+
+  for (var i = 0; i < urls.length; i++) {
+
+    //parse each line, if returned 'undefined': not a correct url
+    var parsedUrl = urlParser.parse(urls[i]);
+    if (parsedUrl) {
+      if (parsedUrl.provider == 'youtube') {
+
+        youtubeVideoID = youtubeVideoID + ',' + parsedUrl.id;
+        youtubeVideoIdArr[urlCounter] = parsedUrl.id;
+        urlCounter++;
+      }
+
+      //if vimeo url, add the full url to vimeoUrlArr array
+      if (parsedUrl.provider == 'vimeo') {
+
+        //Use urlParser.prase(url[i]) and then create link using below
+        var createdUrl = urlParser.create({
+          videoInfo: {
+            provider: parsedUrl.provider,
+            id: parsedUrl.id,
+            mediaType: parsedUrl.mediaType,
+          }
+        })
+        vimeoUrlArr[urlCounter] = createdUrl;
+        urlCounter++;
+      }
+    } //end check returned value
+  } //end for loop
+} //end function
+
+//////////////////////////////////////////////////////////
+////////////////////Print section/////////////////////////
+//////////////////////////////////////////////////////////
+//This function prints out titles of the videos in li
+function printTitle() {
+
+  //Clear output editor
+  outputEditor.setValue('');
+
+  var videoNumber = 0;
+
+  //Add <ol>
+  outputEditor.session.insert(0, '<ol>');
+  addEmptyLine();
+
+  //Get the biggest array
+  var arrSize = getBiggestArr(vimeoUrlArr, youtubeVideoIdArr);
+  var vimeo = 0;
+  var youtube = 0;
+  for (var r = 0; r < arrSize; r++) {
+
+    //Print vimeo titles
+    if (vimeoUrlArr[r]) {
+      var title = vimeoResponse[vimeo].title;
+      var duration = convertVimeoDuration(vimeoResponse[vimeo].duration);
+      var li = `  <li><strong>Video #${++videoNumber} ${title} (Duration: ${duration})</strong></li>`;
+      outputEditor.session.insert(0, li);
+      addEmptyLine();
+      vimeo++;
+    }
+
+    //Print youtube titles
+    if (youtubeVideoIdArr[r]) {
+      var title = youtubeResponse.result.items[youtube].snippet.title;
+      var duration = convertYoutubeDuration(youtubeResponse.result.items[youtube].contentDetails.duration);
+      var li = `  <li><strong>Video #${++videoNumber} ${title} (Duration: ${duration})</strong></li>`;
+      outputEditor.session.insert(0, li);
+      addEmptyLine();
+      youtube++;
+    }
+  }
+
+  //Add </ol>
+  outputEditor.session.insert(0, '</ol>');
+  addEmptyLine();
+} //end function
+
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+
+function printIframe() {
+  outputEditor.session.insert(0, '<p>');
+  //Get the biggest array
+  var arrSize = getBiggestArr(vimeoUrlArr, youtubeVideoIdArr);
+  var vimeo = 0;
+  var youtube = 0;
+  for (var r = 0; r < arrSize; r++) {
+    addEmptyLine();
+    //Print vimeo titles
+    if (vimeoUrlArr[r]) {
+      var videoId = vimeoResponse[vimeo].video_id;
+      var iframe = `  <iframe width='120' height='120' src='https://player.vimeo.com/video/${videoId}?color=ffffff&amp;title=0&amp;byline=0&amp;portrait=0' frameborder='0' webkitallowfullscreen='' mozallowfullscreen='' allowfullscreen=''></iframe>`;
+      outputEditor.session.insert(r, iframe);
+      addEmptyLine();
+      vimeo++;
+    }
+
+    //Print youtube titles
+    if (youtubeVideoIdArr[r]) {
+      var iframe = `  <iframe width='120' height='120' src='https://www.youtube.com/embed/${youtubeVideoIdArr[r]}?rel=0;showinfo=0' frameborder='0' allowfullscreen=''></iframe>`;
+      outputEditor.session.insert(0, iframe);
+      addEmptyLine();
+      youtube++;
+    }
+  }
+  outputEditor.session.insert(0, '</p>');
+}
+
+//Find the biggest array between vimeoUrlArr and youtubeVideoIdArr
+function getBiggestArr(arr1, arr2) {
+  var arrSize = 0;
+  if (arr1.length > arr2.length) {
+    arrSize = arr1.length;
+  } else if (arr1.length < arr2.length) {
+    arrSize = arr2.length;
+  } else {
+    arrSize = arr1.length;
+  }
+  return arrSize;
+}
+
+//////////////////////////////////////////////////////////
+/////////////////////End Print section////////////////////
+//////////////////////////////////////////////////////////
+
 //////////////////////////////////////////////////////////
 ///////////////////Counter section////////////////////////
 //////////////////////////////////////////////////////////
@@ -96,223 +383,9 @@ function updateUrlCounter() {
 /////////////////End Counter section//////////////////////
 //////////////////////////////////////////////////////////
 
-//  Pre-connect to Youtube api to speed up the generating process
-setTimeout(function() {
-  loadYoutubeClient();
-}, 500);
-
-//This function is called by the Generate button
-async function run() {
-  //Only run if the input is more than 10 chars
-  if (isValidUrl == true) {
-    getUrls();
-    await youtubeRequest();
-    await vimeoRequest();
-    printOutput();
-  }
-}
-
-function printOutput() {
-  printTitle();
-  printIframe();
-}
-
-//This function prints out titles of the videos in li
-function printTitle() {
-
-  //Clear output editor
-  outputEditor.setValue('');
-
-  var videoNumber = 0;
-
-  //Add <ol>
-  outputEditor.session.insert(0, '<ol>');
-  addEmptyLine();
-
-  //Get the biggest array
-  var arrSize = getBiggestArr(vimeoUrlArr, youtubeVideoIdArr);
-  var vimeo = 0;
-  var youtube = 0;
-  for (var r = 0; r < arrSize; r++) {
-
-    //Print vimeo titles
-    if (vimeoUrlArr[r]) {
-      var title = vimeoResponse[vimeo].title;
-      var duration = convertVimeoDuration(vimeoResponse[vimeo].duration);
-      var li = `  <li><strong>Video #${++videoNumber} ${title} (Duration: ${duration})</strong></li>`;
-      outputEditor.session.insert(0, li);
-      addEmptyLine();
-      vimeo++;
-    }
-
-    //Print youtube titles
-    if (youtubeVideoIdArr[r]) {
-      var title = youtubeResponse.result.items[youtube].snippet.title;
-      var duration = convertYoutubeDuration(youtubeResponse.result.items[youtube].contentDetails.duration);
-      var li = `  <li><strong>Video #${++videoNumber} ${title} (Duration: ${duration})</strong></li>`;
-      outputEditor.session.insert(0, li);
-      addEmptyLine();
-      youtube++;
-    }
-  }
-
-  //Add </ol>
-  outputEditor.session.insert(0, '</ol>');
-  addEmptyLine();
-} //end function
-
-
-function printIframe() {
-  outputEditor.session.insert(0, '<p>');
-  //Get the biggest array
-  var arrSize = getBiggestArr(vimeoUrlArr, youtubeVideoIdArr);
-  var vimeo = 0;
-  var youtube = 0;
-  for (var r = 0; r < arrSize; r++) {
-    addEmptyLine();
-    //Print vimeo titles
-    if (vimeoUrlArr[r]) {
-      var videoId = vimeoResponse[vimeo].video_id;
-      var iframe = `  <iframe width='120' height='120' src='https://player.vimeo.com/video/${videoId}?color=ffffff&amp;title=0&amp;byline=0&amp;portrait=0' frameborder='0' webkitallowfullscreen='' mozallowfullscreen='' allowfullscreen=''></iframe>`;
-      outputEditor.session.insert(r, iframe);
-      addEmptyLine();
-      vimeo++;
-    }
-
-    //Print youtube titles
-    if (youtubeVideoIdArr[r]) {
-      var iframe = `  <iframe width='120' height='120' src='https://www.youtube.com/embed/${youtubeVideoIdArr[r]}?rel=0;showinfo=0' frameborder='0' allowfullscreen=''></iframe>`;
-      outputEditor.session.insert(0, iframe);
-      addEmptyLine();
-      youtube++;
-    }
-  }
-  outputEditor.session.insert(0, '</p>');
-}
-
-
-//Find the biggest array between vimeoUrlArr and youtubeVideoIdArr
-function getBiggestArr(arr1, arr2) {
-  var arrSize = 0;
-  if (arr1.length > arr2.length) {
-    arrSize = arr1.length;
-  } else if (arr1.length < arr2.length) {
-    arrSize = arr2.length;
-  } else {
-    arrSize = arr1.length;
-  }
-  return arrSize;
-}
-
-//Variable for storing just the video id not the entire youtube url
-//Youtube API only accept video ids not the full url
-var youtubeVideoIdArr = [];
-var youtubeVideoID = '';
-
-//Vimeo accepts OEMBED so full url is accepted and no api key is needed
-var vimeoUrlArr = [];
-
-//This function loads the API using the api key
-function loadYoutubeClient() {
-  gapi.client.setApiKey(apiKey);
-  return gapi.client.load('https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest')
-    .then(function() {},
-      function(err) {
-        console.error('Error loading GAPI client for API', err);
-      });
-}
-
-//This function takes in a full Vimeo url
-function vimeoFetch(url) {
-  return fetch('https://vimeo.com/api/oembed.json?url=' + url) // return this promise
-    .then((resp) => resp.json());
-}
-
-//These variable are for
-var youtubeResponse = [];
-var vimeoResponse = [];
-
-//Send request to Vimeo
-async function vimeoRequest() {
-  var counter = 0;
-
-  for (var o = 0; o < vimeoUrlArr.length; o++) {
-    if (vimeoUrlArr[o]) {
-
-      await vimeoFetch(vimeoUrlArr[o])
-        .then(function(data) {
-          vimeoResponse[counter] = data;
-          counter++;
-        });
-    }
-  } //end for loop
-} //end function
-
-
-// Sends request to Youtube
-function youtubeRequest() {
-  return gapi.client.youtube.videos.list({
-      'part': 'snippet,contentDetails',
-      'id': youtubeVideoID
-    })
-    .then(function(response) {
-        youtubeResponse = response;
-      },
-      function(err) {
-        console.error('Execute error', err);
-      });
-} //end function
-
-gapi.load('client');
-
-
-// This function gets urls from the input editor
-function getUrls() {
-  //Reset arrays
-  vimeoUrlArr = [];
-  youtubeVideoIdArr = [];
-  youtubeVideoID = '';
-
-  //Get all lines from the input editor
-  var urls = inputEditor.session.doc.getAllLines();
-  var urlCounter = 0;
-
-  for (var i = 0; i < urls.length; i++) {
-
-    //parse each line, if returned 'undefined': not a correct url
-    var parsedUrl = urlParser.parse(urls[i]);
-    if (parsedUrl) {
-      if (parsedUrl.provider == 'youtube') {
-
-        youtubeVideoID = youtubeVideoID + ',' + parsedUrl.id;
-        youtubeVideoIdArr[urlCounter] = parsedUrl.id;
-        urlCounter++;
-      }
-
-      //if vimeo url, add the full url to vimeoUrlArr array
-      if (parsedUrl.provider == 'vimeo') {
-
-        //Use urlParser.prase(url[i]) and then create link using below
-        var createdUrl = urlParser.create({
-          videoInfo: {
-            provider: parsedUrl.provider,
-            id: parsedUrl.id,
-            mediaType: parsedUrl.mediaType,
-          }
-        })
-        vimeoUrlArr[urlCounter] = createdUrl;
-        urlCounter++;
-      }
-    } //end check returned value
-  } //end for loop
-} //end function
-
-
 //////////////////////////////////////////////////////////
 ///////////////////Input & Output setup///////////////////
 //////////////////////////////////////////////////////////
-
-
 function setupInputEditor() {
   window.inputEditor = ace.edit('input');
   inputEditor.setTheme('ace/theme/tomorrow_night_eighties');
@@ -353,8 +426,8 @@ function setupOutputEditor() {
   window.outputEditor = ace.edit('output');
   outputEditor.setTheme('ace/theme/tomorrow_night_eighties');
   outputEditor.getSession().setMode('ace/mode/html');
-  outputEditor.on('change', updateOutput);
-  setTimeout(updateOutput, 100);
+  // outputEditor.on('change', updateOutput);
+  // setTimeout(updateOutput, 100);
 
   outputEditor.setOptions({
     fontSize: '10.5pt',
@@ -368,23 +441,23 @@ function setupOutputEditor() {
   outputEditor.setBehavioursEnabled(false);
 }
 
-function updateOutput() {
-  var shouldShow = !outputEditor.session.getValue().length;
-  var node = outputEditor.renderer.emptyMessageNode;
-  if (!shouldShow && node) {
-    outputEditor.renderer.scroller.removeChild(outputEditor.renderer.emptyMessageNode);
-    outputEditor.renderer.emptyMessageNode = null;
-  } else if (shouldShow && !node) {
-    node = outputEditor.renderer.emptyMessageNode = document.createElement('div');
-    node.textContent = 'Output';
-    node.className = 'outputMessage';
-    outputEditor.renderer.scroller.appendChild(node);
-  }
-}
+// function updateOutput() {
+//   var shouldShow = !outputEditor.session.getValue().length;
+//   var node = outputEditor.renderer.emptyMessageNode;
+//   if (!shouldShow && node) {
+//     outputEditor.renderer.scroller.removeChild(outputEditor.renderer.emptyMessageNode);
+//     outputEditor.renderer.emptyMessageNode = null;
+//   } else if (shouldShow && !node) {
+//     node = outputEditor.renderer.emptyMessageNode = document.createElement('div');
+//     node.textContent = 'Output';
+//     node.className = 'outputMessage';
+//     outputEditor.renderer.scroller.appendChild(node);
+//   }
+// }
 
 
 //////////////////////////////////////////////////////////
-////////////////CEnd Input & Output setup/////////////////
+/////////////////End Input & Output setup/////////////////
 //////////////////////////////////////////////////////////
 
 

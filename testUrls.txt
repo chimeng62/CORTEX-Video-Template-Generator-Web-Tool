@@ -5,3 +5,16 @@ https://vimeo.com/344865785
 https://vimeo.com/307787245
 
 https://www.youtube.com/watch?v=eIT1goLEv48&list=RDmTNmjFqNfcc&index=8
+
+
+
+//Invalid youtube urls
+
+https://www.youtube.com/watch?v=eFy7etliYrg
+
+//Invalid Vimeo urls
+
+https://vimeo.com/444444444
+
+
+https://vimeo.com/555555555
