@@ -12,17 +12,15 @@ document.querySelector('#copy').addEventListener('click', copyOutput);
 // This variable is for requesting to the API
 var apiKey = 'AIzaSyDBYVgCATp-oO7PCaJLvg6wZyl3gmTDwz4';
 
-//Error messages
-var videoNotFoundErrMsg = 'Some of the Vimeo links are broken or inaccessible through the API, Check console for more.';
-
 //Check vimeo links
-var isVideoFound = true;
+var isVimeoVideoFound = true;
 
 //  Pre-connect to Youtube api to speed up the generating process
 setTimeout(function() {
   loadYoutubeClient();
 }, 500);
 
+var youtubeResponseTotal = '';
 //This function is called by the Generate button
 async function run() {
   //Only run if the input is more than 10 chars
@@ -32,16 +30,35 @@ async function run() {
     //Only send requests to Youtube if urls exist
     if (youtubeVideoID) {
       await youtubeRequest();
+
+      youtubeResponseTotal = youtubeResponse.result.pageInfo.totalResults;
+      findYoutubeUrlError();
     }
 
     await vimeoRequest();
-
-    if (isVideoFound == true) {
-      hideErrorMsg();
-      printOutput();
-    } else {
+    //Show errors
+    if (isVimeoVideoFound == false && youtubeUrlCounter == youtubeResponseTotal) {
       outputEditor.setValue('');
-      showErrorMsg(videoNotFoundErrMsg);
+      showErrorMsg('.outputMessage1', `Error: ${vimeoErrorUrlCounter} of ${vimeoUrlCounter} Vimeo links are broken or inaccessible through the API.`);
+      showErrorMsg('.outputMessage2',`Broken Vimeo url(s): </br>${vimeoErrorUrl}</br>
+      Reason: Uploaders can set the privacy setting of their Vimeo videos to "Embed only", therefore they can't be found anywhere else on the web.`);
+
+    } else if (isVimeoVideoFound == true && youtubeUrlCounter !== youtubeResponseTotal) {
+      outputEditor.setValue('');
+      showErrorMsg('.outputMessage1', `Error: ${youtubeUrlCounter-youtubeResponseTotal} of ${youtubeUrlCounter} Youtube links are broken. Please check.`);
+      showErrorMsg('.outputMessage2',`Broken Youtube video ID(s): </br>${youtubeErrorUrl}</br>`);
+
+    } else if (isVimeoVideoFound == false && youtubeUrlCounter !== youtubeResponseTotal) {
+      outputEditor.setValue('');
+      showErrorMsg('.outputMessage1', `Error: ${youtubeUrlCounter-youtubeResponseTotal} of ${youtubeUrlCounter} Youtube links are broken and </br>${vimeoErrorUrlCounter} of ${vimeoUrlCounter}  Vimeo links are broken or inaccessible through the API.`);
+      showErrorMsg('.outputMessage2',`Broken Vimeo url(s): </br>${vimeoErrorUrl}</br>
+      Broken Youtube video ID(s): </br>${youtubeErrorUrl}</br>
+      Reason: Uploaders can set the privacy setting of their Vimeo videos to "Embed only", therefore they can't be found anywhere else on the web.`);
+
+    } else {
+      hideErrorMsg('.outputMessage1');
+      hideErrorMsg('.outputMessage2');
+      printOutput();
     }
   }
 }
@@ -51,33 +68,27 @@ function printOutput() {
   printIframe();
 }
 
-// TODO: Find Vimeo video items on vUWS for demonstration
-
-//////////////////////////////////////////////////////////
-//////////////////////////TEST AREA///////////////////////
-//////////////////////////////////////////////////////////
-
 //initiate error message container
 var node = outputEditor.renderer.emptyMessageNode;
 node = outputEditor.renderer.emptyMessageNode = document.createElement('div');
-node.className = 'outputMessage';
+node.className = 'outputMessage1';
 outputEditor.renderer.scroller.appendChild(node);
 
-function showErrorMsg(errMsg) {
-  document.querySelector('.outputMessage').innerHTML = errMsg;
+var node = outputEditor.renderer.emptyMessageNode;
+node = outputEditor.renderer.emptyMessageNode = document.createElement('div');
+node.className = 'outputMessage2';
+outputEditor.renderer.scroller.appendChild(node);
+
+function showErrorMsg(outputClass, errMsg) {
+  document.querySelector(outputClass).innerHTML = errMsg;
 }
 
-function hideErrorMsg() {
+function hideErrorMsg(outputClass) {
   var node = outputEditor.renderer.emptyMessageNode;
   if (node) {
-    document.querySelector('.outputMessage').innerHTML = '';
+    document.querySelector(outputClass).innerHTML = '';
   }
 }
-
-//////////////////////////////////////////////////////////
-//////////////////////END TEST AREA///////////////////////
-//////////////////////////////////////////////////////////
-
 
 //Variable for storing just the video id not the entire youtube url
 //Youtube API only accept video ids not the full url
@@ -101,8 +112,30 @@ function loadYoutubeClient() {
       });
 }
 
+//Youtube error checking
+var youtubeErrorUrlArr = [];
+var youtubeErrorUrl = '';
+var youtubeResponseVideoId=[];
+
+
+function findYoutubeUrlError() {
+  getyoutubeResponseVideoIdArr();
+	//Compare Youtube Video Ids sent against the response form Youtube
+  youtubeErrorUrlArr = arrDiff(youtubeVideoIdArr, youtubeResponseVideoId);
+
+  youtubeErrorUrlArr.forEach(function(element) {
+    youtubeErrorUrl = youtubeErrorUrl + `&bullet; ${element}</br>`;
+  })
+}
+
+function getyoutubeResponseVideoIdArr(){
+  for(let i=0;i<youtubeResponse.result.items.length;i++){
+   youtubeResponseVideoId.push(youtubeResponse.result.items[i].id);
+  }
+}
+
+
 var youtubeResponse = [];
-// TODO: switch youtube request function to individual request: check jsfiddle playground
 // Sends request to Youtube
 function youtubeRequest() {
   return gapi.client.youtube.videos.list({
@@ -119,6 +152,15 @@ function youtubeRequest() {
 
 gapi.load('client');
 
+
+
+//Compare elements between 2 arrays and returns the different elements
+function arrDiff(arr1, arr2) {
+  var arrays = [arr1, arr2].sort((a, b) => a.length - b.length);
+  var smallSet = new Set(arrays[0]);
+
+  return arrays[1].filter(x => !smallSet.has(x));
+}
 //////////////////////////////////////////////////////////
 /////////////////End Youtube request section//////////////
 //////////////////////////////////////////////////////////
@@ -127,20 +169,26 @@ gapi.load('client');
 //////////////////////////////////////////////////////////
 ///////////////////Vimeo request section//////////////////
 //////////////////////////////////////////////////////////
-
-
-
+var vimeoErrorUrlCounter = 0;
+var vimeoErrorUrl='';
 //This function takes in a full Vimeo url
 function vimeoFetch(url) {
   return fetch('https://vimeo.com/api/oembed.json?url=' + url) // return this promise
     .then((resp) => resp.json())
-    .catch((err) => isVideoFound = false);
+    .catch((err) => {
+      isVimeoVideoFound = false;
+      vimeoErrorUrlCounter++;
+      //For error checking: showing which urls are error
+      vimeoErrorUrl = vimeoErrorUrl + `&bullet; ${url}</br>`;
+    });
 }
 
 var vimeoResponse = [];
 
 //Send request to Vimeo
 async function vimeoRequest() {
+  //reset counter
+  vimeoErrorUrlCounter = 0;
   var counter = 0;
 
   for (var o = 0; o < vimeoUrlArr.length; o++) {
@@ -151,9 +199,6 @@ async function vimeoRequest() {
           vimeoResponse[counter] = data;
           counter++;
         })
-        .catch(function(error) {
-          isVideoFound = false;
-        });
     }
   } //end for loop
 } //end function
@@ -162,15 +207,26 @@ async function vimeoRequest() {
 ///////////////////End Vimeo request section//////////////
 //////////////////////////////////////////////////////////
 
+//counter for youtube urls
+var youtubeUrlCounter = 0;
+var vimeoUrlCounter = 0;
 // This function gets urls from the input editor
 function getUrls() {
   //Reset arrays
   vimeoUrlArr = [];
   youtubeVideoIdArr = [];
   youtubeVideoID = '';
-
+  //Reset Youtube error checking
+  youtubeErrorUrlArr = [];
+  youtubeErrorUrl = '';
+  youtubeResponseVideoId=[];
+  youtubeResponseTotal=0;
+  youtubeUrlCounter = 0;
+  vimeoUrlCounter = 0;
   //Reset video checking
-  isVideoFound = true;
+  isVimeoVideoFound = true;
+  vimeoErrorUrl='';
+
   //Get all lines from the input editor
   var urls = inputEditor.session.doc.getAllLines();
   var urlCounter = 0;
@@ -182,9 +238,13 @@ function getUrls() {
     if (parsedUrl) {
       if (parsedUrl.provider == 'youtube') {
 
+        //for requesting to Youtube Api
         youtubeVideoID = youtubeVideoID + ',' + parsedUrl.id;
+        //For printing youtube iframe
         youtubeVideoIdArr[urlCounter] = parsedUrl.id;
+
         urlCounter++;
+        youtubeUrlCounter++;
       }
 
       //if vimeo url, add the full url to vimeoUrlArr array
@@ -199,6 +259,7 @@ function getUrls() {
           }
         })
         vimeoUrlArr[urlCounter] = createdUrl;
+        vimeoUrlCounter++;
         urlCounter++;
       }
     } //end check returned value
@@ -208,6 +269,7 @@ function getUrls() {
 //////////////////////////////////////////////////////////
 ////////////////////Print section/////////////////////////
 //////////////////////////////////////////////////////////
+
 //This function prints out titles of the videos in li
 function printTitle() {
 
@@ -376,7 +438,6 @@ function updateUrlCounter() {
       vimeoCounterElement.classList.remove('vimeoCounterFlash');
     }, 500);
   }
-
 } // End function
 
 //////////////////////////////////////////////////////////
@@ -416,7 +477,7 @@ function updateInput() {
     inputEditor.renderer.emptyMessageNode = null;
   } else if (shouldShow && !node) {
     node = inputEditor.renderer.emptyMessageNode = document.createElement('div');
-    node.textContent = 'Paste the whole HTML of an item and make sure only one link on one line'
+    node.textContent = "Paste the whole HTML of an item and make sure there's only one link on each line"
     node.className = 'emptyMessage'
     inputEditor.renderer.scroller.appendChild(node);
   }
@@ -426,8 +487,6 @@ function setupOutputEditor() {
   window.outputEditor = ace.edit('output');
   outputEditor.setTheme('ace/theme/tomorrow_night_eighties');
   outputEditor.getSession().setMode('ace/mode/html');
-  // outputEditor.on('change', updateOutput);
-  // setTimeout(updateOutput, 100);
 
   outputEditor.setOptions({
     fontSize: '10.5pt',
@@ -440,21 +499,6 @@ function setupOutputEditor() {
   outputEditor.setShowPrintMargin(false);
   outputEditor.setBehavioursEnabled(false);
 }
-
-// function updateOutput() {
-//   var shouldShow = !outputEditor.session.getValue().length;
-//   var node = outputEditor.renderer.emptyMessageNode;
-//   if (!shouldShow && node) {
-//     outputEditor.renderer.scroller.removeChild(outputEditor.renderer.emptyMessageNode);
-//     outputEditor.renderer.emptyMessageNode = null;
-//   } else if (shouldShow && !node) {
-//     node = outputEditor.renderer.emptyMessageNode = document.createElement('div');
-//     node.textContent = 'Output';
-//     node.className = 'outputMessage';
-//     outputEditor.renderer.scroller.appendChild(node);
-//   }
-// }
-
 
 //////////////////////////////////////////////////////////
 /////////////////End Input & Output setup/////////////////
@@ -493,11 +537,9 @@ function copyAlertOverlay() {
   document.querySelector('#output .ace_scroller .ace_content').appendChild(node);
 }
 
-
 //////////////////////////////////////////////////////////
 ///////////////////////End Copy function//////////////////
 //////////////////////////////////////////////////////////
-
 
 //This function adds an empty line to the output editor
 function addEmptyLine() {

@@ -1,4 +1,5 @@
-Copyright for portions of YoutubeVimeoInfoGenerator are held by [Julian Hangstörfer, 2014] as part of project jsVideoUrlParser. All other copyright for project YoutubeVimeoInfoGenerator are held by [Chimeng Chhay, 2019].
+Copyright for portions of YoutubeVimeoInfoGenerator are held by [Julian Hangstörfer, 2014] as part of project jsVideoUrlParser.
+All other copyright for project YoutubeVimeoInfoGenerator are held by [Chimeng Chhay, 2019].
 
 The MIT License (MIT)
 

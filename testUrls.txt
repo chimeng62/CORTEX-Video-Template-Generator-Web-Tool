@@ -3,6 +3,7 @@ https://www.youtube.com/watch?v=DqXD8cDSA7w&list=RDmTNmjFqNfcc&index=7
 https://vimeo.com/344865785
 
 https://vimeo.com/307787245
+https://player.vimeo.com/video/307787245
 
 https://www.youtube.com/watch?v=eIT1goLEv48&list=RDmTNmjFqNfcc&index=8
 
@@ -11,10 +12,14 @@ https://www.youtube.com/watch?v=eIT1goLEv48&list=RDmTNmjFqNfcc&index=8
 //Invalid youtube urls
 
 https://www.youtube.com/watch?v=eFy7etliYrg
+https://www.youtube.com/watch?v=eFy7etl3Yrg
+
 
 //Invalid Vimeo urls
 
 https://vimeo.com/444444444
+https://player.vimeo.com/video/204101408
 
-
-https://vimeo.com/555555555
+https://vimeo.com/204101408
+https://player.vimeo.com/video/204101459
+https://player.vimeo.com/video/204101677
