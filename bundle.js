@@ -391,6 +391,7 @@ var isAtleastOneMatch = false;
 // This function outputs values to counter div element
 function updateUrlCounter() {
 
+  isValidUrl = false;
   // Reset values
   youtubeCounter = 0;
   vimeoCounter = 0;
